@@ -1,0 +1,19 @@
+{
+  "name": "caltrack-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack AI-Powered Calorie and Nutrition Tracker with Gemini Vision & Natural Language",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

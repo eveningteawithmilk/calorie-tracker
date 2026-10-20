@@ -1,0 +1,18 @@
+{
+  "name": "CalTrack - Calorie & Nutrition Tracker",
+  "short_name": "CalTrack",
+  "description": "Smart AI-powered calorie and macronutrient tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1120",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23f97316'/><text y='68' x='50' text-anchor='middle' font-size='60' fill='white'>🔥</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

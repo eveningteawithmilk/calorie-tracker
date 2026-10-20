@@ -1,0 +1,13 @@
+{
+  "appId": "com.caltrack.app",
+  "appName": "CalTrack",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aēsop Calorie - Mindful Daily Nutrition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Mobile & PWA meta tags -->
+  <meta name="theme-color" content="#f4f0ea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-aesop">
+  <div class="app-wrapper">
+    <!-- Header / Navbar -->
+    <header class="app-header">
+      <div class="brand">
+        <h1 class="brand-title">Aēsop Calorie</h1>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="aesop-nav">
+        <a href="#journal" class="aesop-nav-link active">Journal</a>
+        <a href="#library" onclick="openAddFoodModal()" class="aesop-nav-link">Library</a>
+        <a href="#insights" onclick="focusInsights()" class="aesop-nav-link">Insights</a>
+      </nav>
+
+      <!-- Action Buttons & Date Navigation -->
+      <div class="header-actions">
+        <!-- Date Navigator -->
+        <div class="date-navigator">
+          <button id="prevDayBtn" class="icon-btn-minimal" title="Previous Day">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <div class="date-display-wrapper">
+            <span id="currentDateLabel">Today</span>
+            <input type="date" id="datePickerInput" class="date-picker-hidden">
+          </div>
+          <button id="nextDayBtn" class="icon-btn-minimal" title="Next Day">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <button id="todayBtn" class="pill-btn-minimal">Today</button>
+        </div>
+
+        <button id="aiNavBtn" class="aesop-btn-outline" onclick="focusAiLogger()" title="AI Natural Language & Photo Estimator">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>AI</span>
+        </button>
+        <button id="calcModalBtn" class="aesop-btn-outline" title="Goals">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Goals</span>
+        </button>
+        <button id="mobileModalBtn" class="aesop-btn-outline" onclick="openMobileInstallModal()" title="Install on Mobile">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <span>Mobile</span>
+        </button>
+        <button id="themeToggleBtn" class="icon-btn-minimal" title="Switch Theme">
+          <i class="fa-solid fa-circle-half-stroke"></i>
+        </button>
+
+        <div class="dropdown">
+          <button id="moreMenuBtn" class="aesop-menu-btn" title="Menu">
+            <span class="menu-bar"></span>
+            <span class="menu-bar"></span>
+          </button>
+          <div id="moreMenuDropdown" class="dropdown-menu">
+            <button onclick="openMobileInstallModal()" class="dropdown-item">
+              <i class="fa-solid fa-mobile-screen-button"></i> 📱 Put on Mobile (QR)
+            </button>
+            <div class="dropdown-divider"></div>
+            <button onclick="setTheme('aesop')" class="dropdown-item">
+              <i class="fa-solid fa-feather"></i> Aēsop Editorial Theme
+            </button>
+            <button onclick="setTheme('dark')" class="dropdown-item">
+              <i class="fa-solid fa-moon"></i> Dark Obsidian Theme
+            </button>
+            <button onclick="setTheme('light')" class="dropdown-item">
+              <i class="fa-solid fa-sun"></i> Clean Modern Theme
+            </button>
+            <div class="dropdown-divider"></div>
+            <button onclick="openAiSettingsModal()" class="dropdown-item">
+              <i class="fa-solid fa-robot"></i> AI Settings & API Key
+            </button>
+            <button id="loadDemoDataBtn" class="dropdown-item">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Load Demo Data
+            </button>
+            <button id="exportDataBtn" class="dropdown-item">
+              <i class="fa-solid fa-file-export"></i> Export Backup
+            </button>
+            <label class="dropdown-item file-input-label">
+              <i class="fa-solid fa-file-import"></i> Import Backup
+              <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            </label>
+            <button id="clearTodayBtn" class="dropdown-item text-danger">
+              <i class="fa-solid fa-trash-can"></i> Clear Today's Log
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="main-content">
+
+      <!-- Editorial Header Banner from Image -->
+      <section class="editorial-banner">
+        <div class="editorial-meta" id="editorialDateLabel">Journal • Thursday, 24 October</div>
+        <h1 class="editorial-title">Daily Intake Summary</h1>
+        <p class="editorial-subtitle">
+          A balanced approach to nutrition, prioritizing whole grains, lean proteins, and seasonal botanicals. Track your consumption with mindful precision.
+        </p>
+      </section>
+      <div class="editorial-divider"></div>
+      
+      <!-- Top Overview Dashboard Cards -->
+      <section class="overview-section">
+        <!-- Calorie Ring & High-level stats -->
+        <div class="card calorie-summary-card">
+          <div class="card-header-clean">
+            <h3>Daily Energy Budget</h3>
+            <span class="badge" id="netBudgetBadge">Target: 2,200 kcal</span>
+          </div>
+
+          <div class="calorie-summary-body">
+            <!-- Circular Progress Visual -->
+            <div class="progress-ring-container">
+              <svg class="progress-ring" width="180" height="180">
+                <circle class="progress-ring__circle-bg" stroke-width="12" fill="transparent" r="74" cx="90" cy="90"/>
+                <circle id="calorieRingCircle" class="progress-ring__circle" stroke-width="12" stroke-linecap="round" fill="transparent" r="74" cx="90" cy="90"/>
+              </svg>
+              <div class="ring-center-content">
+                <span class="remaining-val" id="remainingCaloriesVal">2,200</span>
+                <span class="remaining-unit">kcal</span>
+                <span class="remaining-label" id="remainingStatusLabel">Remaining</span>
+              </div>
+            </div>
+
+            <!-- Stats Column -->
+            <div class="energy-breakdown">
+              <div class="energy-stat-item">
+                <div class="stat-icon intake"><i class="fa-solid fa-utensils"></i></div>
+                <div>
+                  <div class="stat-label">Food Intake</div>
+                  <div class="stat-val" id="foodCaloriesVal">0 <span class="unit">kcal</span></div>
+                </div>
+              </div>
+
+              <div class="energy-stat-item">
+                <div class="stat-icon burn"><i class="fa-solid fa-fire"></i></div>
+                <div>
+                  <div class="stat-label">Exercise Burn</div>
+                  <div class="stat-val" id="burnCaloriesVal">0 <span class="unit">kcal</span></div>
+                </div>
+              </div>
+
+              <div class="energy-stat-item">
+                <div class="stat-icon net"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div>
+                  <div class="stat-label">Net Intake</div>
+                  <div class="stat-val" id="netCaloriesVal">0 <span class="unit">kcal</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Macronutrients Card -->
+        <div class="card macros-card">
+          <div class="card-header-clean">
+            <h3>Macronutrients</h3>
+            <span class="subtext-sm">Grams & Daily Goals</span>
+          </div>
+
+          <div class="macros-grid">
+            <!-- Protein -->
+            <div class="macro-item protein-box">
+              <div class="macro-header">
+                <div class="macro-title">
+                  <span class="dot dot-protein"></span>
+                  <strong>Protein</strong>
+                </div>
+                <span class="macro-pct" id="proteinPct">0%</span>
+              </div>
+              <div class="macro-amount">
+                <span id="proteinCurrentVal">0</span> / <span id="proteinTargetVal">150</span>g
+              </div>
+              <div class="progress-bar-bg">
+                <div id="proteinProgressBar" class="progress-bar-fill protein-fill" style="width: 0%"></div>
+              </div>
+              <div class="macro-cal" id="proteinKcal">0 kcal</div>
+            </div>
+
+            <!-- Carbs -->
+            <div class="macro-item carbs-box">
+              <div class="macro-header">
+                <div class="macro-title">
+                  <span class="dot dot-carbs"></span>
+                  <strong>Carbs</strong>
+                </div>
+                <span class="macro-pct" id="carbsPct">0%</span>
+              </div>
+              <div class="macro-amount">
+                <span id="carbsCurrentVal">0</span> / <span id="carbsTargetVal">200</span>g
+              </div>
+              <div class="progress-bar-bg">
+                <div id="carbsProgressBar" class="progress-bar-fill carbs-fill" style="width: 0%"></div>
+              </div>
+              <div class="macro-cal" id="carbsKcal">0 kcal</div>
+            </div>
+
+            <!-- Fats -->
+            <div class="macro-item fat-box">
+              <div class="macro-header">
+                <div class="macro-title">
+                  <span class="dot dot-fat"></span>
+                  <strong>Fats</strong>
+                </div>
+                <span class="macro-pct" id="fatPct">0%</span>
+              </div>
+              <div class="macro-amount">
+                <span id="fatCurrentVal">0</span> / <span id="fatTargetVal">65</span>g
+              </div>
+              <div class="progress-bar-bg">
+                <div id="fatProgressBar" class="progress-bar-fill fat-fill" style="width: 0%"></div>
+              </div>
+              <div class="macro-cal" id="fatKcal">0 kcal</div>
+            </div>
+          </div>
+
+          <!-- Quick Water Intake Tracker -->
+          <div class="water-tracker-container">
+            <div class="water-header">
+              <div class="water-title">
+                <i class="fa-solid fa-droplet text-water"></i>
+                <strong>Water Tracker</strong>
+              </div>
+              <div class="water-amount">
+                <span id="waterCurrentVal">0</span> / <span id="waterTargetVal">2500</span> ml
+              </div>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="waterProgressBar" class="progress-bar-fill water-fill" style="width: 0%"></div>
+            </div>
+            <div class="water-actions">
+              <button class="water-quick-btn" onclick="addWater(250)">+250 ml (Glass)</button>
+              <button class="water-quick-btn" onclick="addWater(500)">+500 ml (Bottle)</button>
+              <button class="water-quick-btn reset" onclick="resetWater()" title="Reset Water"><i class="fa-solid fa-rotate-left"></i></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Smart Food Logger & Assistant -->
+      <section class="ai-assistant-card card" id="aiSection">
+        <div class="ai-header">
+          <div class="ai-title">
+            <span class="ai-sparkle-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+            <div>
+              <h3>AI Nutrition & Meal Estimator</h3>
+              <span class="subtext-sm">Natural language breakdown & photo plate analysis (Gemini Vision)</span>
+            </div>
+          </div>
+          <div class="ai-status-badge">
+            <span class="status-indicator" id="aiStatusDot"></span>
+            <span id="aiStatusText">AI Ready</span>
+            <button class="icon-btn-sm" onclick="openAiSettingsModal()" title="AI API Settings">
+              <i class="fa-solid fa-gear"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="ai-input-container">
+          <div class="ai-input-wrapper">
+            <textarea id="aiPromptInput" class="ai-textarea" rows="2" placeholder="Describe your meal (e.g. '200 g air-fried chicken' or '150 g roti, 200 g paneer, 10 g oil' or 'Smith & Jones noodles + milk coffee')..."></textarea>
+            <div class="ai-input-actions">
+              <label class="btn-photo-upload" title="Upload food photo or nutrition label">
+                <i class="fa-solid fa-camera"></i>
+                <input type="file" id="aiPhotoInput" accept="image/*" style="display: none;" onchange="handleAiPhotoSelected(event)">
+              </label>
+              <button id="aiEstimateBtn" class="btn btn-primary" onclick="handleAiEstimate()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Estimate with AI
+              </button>
+            </div>
+          </div>
+
+          <!-- Image Preview Row -->
+          <div id="aiImagePreviewRow" class="ai-image-preview-row" style="display: none;">
+            <img id="aiImagePreviewImg" src="" alt="Food Preview">
+            <span id="aiImagePreviewName">food-photo.jpg</span>
+            <button class="btn-clear-image" onclick="clearAiImage()">&times;</button>
+          </div>
+        </div>
+
+        <!-- AI Result Preview Card -->
+        <div id="aiResultCard" class="ai-result-card" style="display: none;">
+          <div class="ai-result-header">
+            <div>
+              <h4 id="aiResultMealName">Grilled Chicken & Rice</h4>
+              <span class="badge" id="aiResultCategoryBadge">Lunch</span>
+            </div>
+            <div class="ai-result-summary-macros">
+              <span class="highlight-kcal" id="aiResultKcal">0 kcal</span>
+              <span class="macro-tag tag-p" id="aiResultProtein">0g P</span>
+              <span class="macro-tag tag-c" id="aiResultCarbs">0g C</span>
+              <span class="macro-tag tag-f" id="aiResultFat">0g F</span>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="ai-breakdown-table">
+              <thead>
+                <tr>
+                  <th>Ingredient / Item</th>
+                  <th>Portion</th>
+                  <th>Calories</th>
+                  <th>Protein</th>
+                  <th>Carbs</th>
+                  <th>Fat</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="aiResultItemsBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="ai-explanation-box" id="aiResultExplanation"></div>
+
+          <div class="ai-result-actions">
+            <div class="select-category-wrap">
+              <label for="aiLogCategorySelect">Log to:</label>
+              <select id="aiLogCategorySelect" class="form-control-sm">
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch" selected>Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+              </select>
+            </div>
+            <div class="ai-btn-group">
+              <button class="btn btn-secondary btn-sm" onclick="dismissAiResult()">Dismiss</button>
+              <button class="btn btn-primary btn-sm" onclick="confirmAiLogMeal()">
+                <i class="fa-solid fa-plus-circle"></i> Log to Today's Meals
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Meals & Exercise Grid -->
+      <div class="content-columns">
+        <!-- Meals Column -->
+        <section class="meals-column">
+          <div class="section-title-row">
+            <h2><i class="fa-solid fa-bowl-food"></i> Meals & Foods</h2>
+            <button class="btn btn-primary btn-sm" onclick="openAddFoodModal()">
+              <i class="fa-solid fa-plus"></i> Log Food
+            </button>
+          </div>
+
+          <!-- Breakfast -->
+          <div class="card meal-card" id="mealCard-breakfast">
+            <div class="meal-card-header">
+              <div class="meal-info">
+                <span class="meal-icon">🌅</span>
+                <div>
+                  <h4 class="meal-name">Breakfast</h4>
+                  <span class="meal-sub-macros" id="breakfastMacros">0 kcal &bull; 0P &bull; 0C &bull; 0F</span>
+                </div>
+              </div>
+              <button class="btn-add-meal-item" onclick="openAddFoodModal('breakfast')" title="Add to Breakfast">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            <div class="meal-items-list" id="breakfastItemsList">
+              <div class="empty-meal-state">No foods logged for breakfast</div>
+            </div>
+          </div>
+
+          <!-- Lunch -->
+          <div class="card meal-card" id="mealCard-lunch">
+            <div class="meal-card-header">
+              <div class="meal-info">
+                <span class="meal-icon">☀️</span>
+                <div>
+                  <h4 class="meal-name">Lunch</h4>
+                  <span class="meal-sub-macros" id="lunchMacros">0 kcal &bull; 0P &bull; 0C &bull; 0F</span>
+                </div>
+              </div>
+              <button class="btn-add-meal-item" onclick="openAddFoodModal('lunch')" title="Add to Lunch">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            <div class="meal-items-list" id="lunchItemsList">
+              <div class="empty-meal-state">No foods logged for lunch</div>
+            </div>
+          </div>
+
+          <!-- Dinner -->
+          <div class="card meal-card" id="mealCard-dinner">
+            <div class="meal-card-header">
+              <div class="meal-info">
+                <span class="meal-icon">🌙</span>
+                <div>
+                  <h4 class="meal-name">Dinner</h4>
+                  <span class="meal-sub-macros" id="dinnerMacros">0 kcal &bull; 0P &bull; 0C &bull; 0F</span>
+                </div>
+              </div>
+              <button class="btn-add-meal-item" onclick="openAddFoodModal('dinner')" title="Add to Dinner">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            <div class="meal-items-list" id="dinnerItemsList">
+              <div class="empty-meal-state">No foods logged for dinner</div>
+            </div>
+          </div>
+
+          <!-- Snacks -->
+          <div class="card meal-card" id="mealCard-snack">
+            <div class="meal-card-header">
+              <div class="meal-info">
+                <span class="meal-icon">🍎</span>
+                <div>
+                  <h4 class="meal-name">Snacks</h4>
+                  <span class="meal-sub-macros" id="snackMacros">0 kcal &bull; 0P &bull; 0C &bull; 0F</span>
+                </div>
+              </div>
+              <button class="btn-add-meal-item" onclick="openAddFoodModal('snack')" title="Add to Snacks">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            <div class="meal-items-list" id="snackItemsList">
+              <div class="empty-meal-state">No snacks logged</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Side: Exercise & Weekly Analytics -->
+        <section class="side-column">
+          <!-- Exercise Logger -->
+          <div class="card exercise-card">
+            <div class="section-title-row">
+              <h3><i class="fa-solid fa-person-running text-accent"></i> Exercise & Burn</h3>
+              <button class="btn btn-secondary btn-sm" onclick="openAddExerciseModal()">
+                <i class="fa-solid fa-plus"></i> Log Activity
+              </button>
+            </div>
+            <div class="exercise-items-list" id="exerciseItemsList">
+              <div class="empty-meal-state">No workouts logged today</div>
+            </div>
+          </div>
+
+          <!-- 7-Day Analytics Charts -->
+          <div class="card analytics-card">
+            <div class="section-title-row">
+              <h3><i class="fa-solid fa-chart-column text-accent"></i> 7-Day Calorie Trends</h3>
+              <span class="subtext-sm">Weekly History</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="weeklyChart"></canvas>
+            </div>
+
+            <div class="chart-summary-row">
+              <div class="chart-stat">
+                <span class="stat-small-label">7-Day Avg</span>
+                <span class="stat-small-val" id="weeklyAvgVal">0 kcal</span>
+              </div>
+              <div class="chart-stat">
+                <span class="stat-small-label">Goal Adherence</span>
+                <span class="stat-small-val" id="weeklyAdherenceVal">100%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>CalTrack &bull; Offline-ready &bull; All data stays local in your browser.</p>
+    </footer>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. Add Food Modal -->
+  <div class="modal-backdrop" id="addFoodModal">
+    <div class="modal-content modal-md">
+      <div class="modal-header">
+        <h3 id="modalFoodTitle"><i class="fa-solid fa-plus-circle text-accent"></i> Log Food Item</h3>
+        <button class="modal-close" onclick="closeModal('addFoodModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Quick Preset Foods Search / Picker -->
+        <div class="preset-section">
+          <label class="form-label">Quick Food Search / Presets</label>
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="foodSearchInput" placeholder="Search presets (e.g. Eggs, Oats, Chicken, Banana)..." autocomplete="off">
+          </div>
+          <div class="preset-pills-container" id="presetPillsContainer">
+            <!-- Preset items rendered by JS -->
+          </div>
+        </div>
+
+        <div class="divider-text"><span>or enter custom item</span></div>
+
+        <!-- Custom Food Form -->
+        <form id="foodItemForm" onsubmit="handleFoodFormSubmit(event)">
+          <div class="form-group">
+            <label class="form-label" for="foodNameInput">Food Name *</label>
+            <input type="text" id="foodNameInput" class="form-control" placeholder="e.g. Grilled Chicken Breast" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="mealCategorySelect">Meal *</label>
+              <select id="mealCategorySelect" class="form-control">
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+                <option value="snack">Snack</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="foodServingsInput">Servings / Portions</label>
+              <input type="number" step="0.1" min="0.1" id="foodServingsInput" class="form-control" value="1.0" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-3">
+              <label class="form-label" for="foodCaloriesInput">Calories (kcal) *</label>
+              <input type="number" step="1" min="0" id="foodCaloriesInput" class="form-control" placeholder="0" required>
+            </div>
+            <div class="form-group col-3">
+              <label class="form-label" for="foodProteinInput">Protein (g)</label>
+              <input type="number" step="0.1" min="0" id="foodProteinInput" class="form-control" placeholder="0">
+            </div>
+            <div class="form-group col-3">
+              <label class="form-label" for="foodCarbsInput">Carbs (g)</label>
+              <input type="number" step="0.1" min="0" id="foodCarbsInput" class="form-control" placeholder="0">
+            </div>
+            <div class="form-group col-3">
+              <label class="form-label" for="foodFatInput">Fats (g)</label>
+              <input type="number" step="0.1" min="0" id="foodFatInput" class="form-control" placeholder="0">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('addFoodModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save to Log</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Add Exercise Modal -->
+  <div class="modal-backdrop" id="addExerciseModal">
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-fire text-accent"></i> Log Exercise</h3>
+        <button class="modal-close" onclick="closeModal('addExerciseModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Preset Activity Pills -->
+        <label class="form-label">Quick Activities</label>
+        <div class="preset-pills-container" id="activityPillsContainer">
+          <!-- Populated by JS -->
+        </div>
+
+        <form id="exerciseForm" onsubmit="handleExerciseFormSubmit(event)">
+          <div class="form-group">
+            <label class="form-label" for="exerciseNameInput">Activity Name *</label>
+            <input type="text" id="exerciseNameInput" class="form-control" placeholder="e.g. Running, Weight Training" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label" for="exerciseDurationInput">Duration (minutes)</label>
+              <input type="number" min="1" id="exerciseDurationInput" class="form-control" placeholder="30">
+            </div>
+            <div class="form-group col-6">
+              <label class="form-label" for="exerciseCaloriesInput">Calories Burned (kcal) *</label>
+              <input type="number" min="1" id="exerciseCaloriesInput" class="form-control" placeholder="250" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('addExerciseModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Add Activity</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Goals & TDEE / BMR Calculator Modal -->
+  <div class="modal-backdrop" id="goalsModal">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-sliders text-accent"></i> Daily Goals & TDEE Calculator</h3>
+        <button class="modal-close" onclick="closeModal('goalsModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="calculator-grid">
+          <!-- Left: TDEE Input Form -->
+          <div class="calc-form-pane">
+            <h4>BMR & TDEE Calculator</h4>
+            <p class="subtext-sm">Calculate your exact caloric needs using the Mifflin-St Jeor formula.</p>
+
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label class="form-label">Gender</label>
+                <select id="calcGender" class="form-control">
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+              <div class="form-group col-6">
+                <label class="form-label">Age</label>
+                <input type="number" id="calcAge" class="form-control" value="25" min="10" max="100">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-6">
+                <label class="form-label">Weight (kg)</label>
+                <input type="number" id="calcWeight" class="form-control" value="70" step="0.5" min="30">
+              </div>
+              <div class="form-group col-6">
+                <label class="form-label">Height (cm)</label>
+                <input type="number" id="calcHeight" class="form-control" value="175" min="100">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Activity Level</label>
+              <select id="calcActivity" class="form-control">
+                <option value="1.2">Sedentary (desk job, little exercise)</option>
+                <option value="1.375" selected>Lightly Active (light exercise 1-3 days/wk)</option>
+                <option value="1.55">Moderately Active (exercise 3-5 days/wk)</option>
+                <option value="1.725">Very Active (hard exercise 6-7 days/wk)</option>
+                <option value="1.9">Extremely Active (athlete / physical job)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Fitness Goal</label>
+              <select id="calcGoal" class="form-control">
+                <option value="-500">Lose Weight (-500 kcal/day)</option>
+                <option value="-250">Mild Weight Loss (-250 kcal/day)</option>
+                <option value="0" selected>Maintain Weight (TDEE)</option>
+                <option value="250">Mild Weight Gain (+250 kcal/day)</option>
+                <option value="500">Build Muscle / Bulk (+500 kcal/day)</option>
+              </select>
+            </div>
+
+            <button type="button" class="btn btn-secondary w-100" onclick="calculateTDEE()">
+              <i class="fa-solid fa-bolt"></i> Calculate Recommendation
+            </button>
+          </div>
+
+          <!-- Right: Custom Goals Settings & Calculation Result -->
+          <div class="calc-results-pane">
+            <h4>Current Targets</h4>
+            <div class="calc-recommendation-box" id="calcRecommendationBox">
+              <div class="rec-label">Estimated Maintenance TDEE: <strong id="estTdeeVal">2,200</strong> kcal</div>
+              <div class="rec-label">Recommended Target: <strong id="recTargetVal" class="text-accent">2,200</strong> kcal/day</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="targetCaloriesInput">Daily Calorie Target (kcal)</label>
+              <input type="number" id="targetCaloriesInput" class="form-control font-bold" value="2000" min="500">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Macro Split Preset</label>
+              <select id="macroSplitPreset" class="form-control" onchange="applyMacroSplitPreset(this.value)">
+                <option value="balanced">Balanced (40% Carbs, 30% Protein, 30% Fat)</option>
+                <option value="high-protein">High Protein (35% Carbs, 40% Protein, 25% Fat)</option>
+                <option value="low-carb">Low Carb / Keto (15% Carbs, 35% Protein, 50% Fat)</option>
+                <option value="custom">Custom Grams</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-4">
+                <label class="form-label">Protein (g)</label>
+                <input type="number" id="targetProteinInput" class="form-control" value="150" min="0">
+              </div>
+              <div class="form-group col-4">
+                <label class="form-label">Carbs (g)</label>
+                <input type="number" id="targetCarbsInput" class="form-control" value="200" min="0">
+              </div>
+              <div class="form-group col-4">
+                <label class="form-label">Fats (g)</label>
+                <input type="number" id="targetFatInput" class="form-control" value="65" min="0">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="targetWaterInput">Daily Water Target (ml)</label>
+              <input type="number" id="targetWaterInput" class="form-control" value="2500" step="100" min="500">
+            </div>
+
+            <button type="button" class="btn btn-primary w-100" onclick="saveGoalsSettings()">
+              <i class="fa-solid fa-check"></i> Save Goals & Update Tracker
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <!-- 4. AI Settings Modal -->
+  <div class="modal-backdrop" id="aiSettingsModal">
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-robot text-accent"></i> AI Configuration</h3>
+        <button class="modal-close" onclick="closeModal('aiSettingsModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="subtext-sm">
+          CalTrack is powered by a <strong>Built-in Offline Nutrition Engine</strong> by default.
+          To unlock advanced natural language understanding, custom Indian recipe breakdown, and <strong>Photo Vision plate recognition</strong>, add your free Google Gemini API Key.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="geminiApiKeyInput">Google Gemini API Key</label>
+          <input type="password" id="geminiApiKeyInput" class="form-control" placeholder="AIzaSy...">
+          <small class="subtext-sm" style="margin-top: 4px;">Get your free key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--accent-color); text-decoration: underline;">Google AI Studio</a></small>
+        </div>
+
+        <div class="ai-key-status" id="apiKeyStatusBox">
+          <i class="fa-solid fa-shield-halved text-accent"></i>
+          <span id="apiKeyStatusText">Checking AI status...</span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('aiSettingsModal')">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveGeminiApiKey()"><i class="fa-solid fa-check"></i> Save Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Mobile Install Modal -->
+  <div class="modal-backdrop" id="mobileInstallModal">
+    <div class="modal-content modal-md">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-mobile-screen-button text-accent"></i> Put Aēsop Calorie on Your Mobile</h3>
+        <button class="modal-close" onclick="closeModal('mobileInstallModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align: center; gap: 20px;">
+        <p class="subtext-sm" style="font-size: 14px;">
+          Make sure your mobile phone is connected to the same Wi-Fi, then scan this QR code or visit the link below:
+        </p>
+
+        <div style="background: #ffffff; padding: 14px; border-radius: 12px; display: inline-block; box-shadow: var(--shadow-md); margin: 0 auto; border: 1px solid var(--border-color);">
+          <img id="mobileQrCodeImg" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http%3A%2F%2F192.168.29.108%3A3000" alt="Scan to open on mobile" style="width: 200px; height: 200px; display: block;">
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <input type="text" id="mobileUrlInput" class="form-control" value="http://192.168.29.108:3000" readonly style="max-width: 280px; text-align: center; font-weight: 600;">
+          <button class="btn btn-secondary btn-sm" onclick="copyMobileUrl()"><i class="fa-regular fa-copy"></i> Copy</button>
+        </div>
+
+        <div style="text-align: left; background: var(--bg-surface); padding: 16px 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 13px; line-height: 1.6;">
+          <strong>📲 How to Install as an App:</strong>
+          <ul style="margin: 8px 0 0 20px;">
+            <li><strong>Android (Chrome):</strong> Open the link, tap the 3 dots (⋮) menu at top right, and select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+            <li><strong>iPhone (Safari):</strong> Open the link, tap the Share icon (<i class="fa-solid fa-arrow-up-from-bracket"></i>), and tap <strong>"Add to Home Screen"</strong>.</li>
+          </ul>
+          <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+            ✨ Installs with the native icon, full-screen view (no browser address bars), camera food recognition, and offline storage.
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: center;">
+          <button type="button" class="btn btn-primary" onclick="closeModal('mobileInstallModal')">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toastNotification" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
