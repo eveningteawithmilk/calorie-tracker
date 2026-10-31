@@ -27,11 +27,11 @@ const NUTRITION_KNOWLEDGE_BASE = [
   { keywords: ['salmon'], calPer100g: 208, pPer100g: 20, cPer100g: 0, fPer100g: 13 }
 ];
 
-function getApiKey() {
+async function getApiKey() {
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '') {
     return process.env.GEMINI_API_KEY.trim();
   }
-  const row = db.prepare("SELECT value FROM settings WHERE key = 'gemini_api_key'").get();
+  const row = await db.get("SELECT value FROM settings WHERE key = 'gemini_api_key'");
   return row ? row.value.trim() : null;
 }
 
@@ -82,7 +82,7 @@ Only return the JSON object, without markdown code fences if possible, or inside
  * Estimate nutrition using Gemini API (Text or Vision)
  */
 async function estimateWithGemini(promptText, imageBase64 = null) {
-  const apiKey = getApiKey();
+  const apiKey = await getApiKey();
   if (!apiKey) {
     throw new Error("NO_API_KEY");
   }
@@ -92,7 +92,6 @@ async function estimateWithGemini(promptText, imageBase64 = null) {
   const contentsParts = [];
 
   if (imageBase64) {
-    // Extract mime type if data URL provided
     let mimeType = 'image/jpeg';
     let rawBase64 = imageBase64;
     const match = imageBase64.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
@@ -157,18 +156,72 @@ async function estimateWithGemini(promptText, imageBase64 = null) {
 }
 
 /**
+ * Estimate nutrition using OpenRouter API
+ */
+async function estimateWithOpenRouter(promptText, imageBase64 = null) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("NO_OPENROUTER_KEY");
+
+  const endpoint = "https://openrouter.ai/api/v1/chat/completions";
+  const content = [];
+
+  if (imageBase64) {
+    content.push({
+      type: "image_url",
+      image_url: { url: imageBase64 }
+    });
+  }
+
+  content.push({
+    type: "text",
+    text: promptText || "Analyze this food/meal and provide an exact nutritional breakdown in the requested JSON schema."
+  });
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: SYSTEM_INSTRUCTION },
+        { role: "user", content: content }
+      ],
+      response_format: { type: "json_object" }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenRouter API error (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  const textResponse = data.choices?.[0]?.message?.content;
+  if (!textResponse) throw new Error("Empty response from OpenRouter AI");
+
+  let cleaned = textResponse.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.replace(/^```json/, "").replace(/```$/, "").trim();
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```/, "").replace(/```$/, "").trim();
+  }
+
+  return JSON.parse(cleaned);
+}
+
+/**
  * Built-in Intelligent Fallback Nutrition Engine
- * Parses natural language input with zero external dependencies or API keys.
  */
 function estimateWithBuiltinEngine(input) {
   const lower = input.toLowerCase();
 
-  // Split by common delimiters (+, and, comma, newline, &)
   const segments = lower.split(/,|\+|\band\b|&|\n/).map(s => s.trim()).filter(Boolean);
   const items = [];
 
   for (const seg of segments) {
-    // Check if segment has quantity like "200 g", "4 eggs", "150 ml", "1 bowl", "2 rotis", "10 g oil"
     let matchedKnowledge = null;
     let bestKeyword = '';
 
@@ -182,7 +235,6 @@ function estimateWithBuiltinEngine(input) {
     }
 
     if (!matchedKnowledge) {
-      // General item fallback
       const numMatch = seg.match(/(\d+(?:\.\d+)?)\s*(g|grams|ml|pcs|piece|bowl|cup|tbsp)?/i);
       const qty = numMatch ? parseFloat(numMatch[1]) : 1;
       items.push({
@@ -197,13 +249,10 @@ function estimateWithBuiltinEngine(input) {
       continue;
     }
 
-    // Determine quantity
     let cal = 0, p = 0, c = 0, f = 0;
     let portionLabel = '';
 
-    // Check for grams or ml
     const gramMatch = seg.match(/(\d+(?:\.\d+)?)\s*(?:g|grams|ml)/i);
-    // Check for piece count (e.g. 4 eggs, 2 rotis, 1 slice)
     const pieceMatch = seg.match(/(\d+(?:\.\d+)?)\s*(?:pcs|pc|piece|pieces|slice|slices|bowl|cup|tbsp)?/i);
 
     if (gramMatch) {
@@ -248,7 +297,6 @@ function estimateWithBuiltinEngine(input) {
     fat: Math.round((acc.fat + curr.fat) * 10) / 10
   }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-  // Infer category based on hour or item names
   let category = "lunch";
   const h = new Date().getHours();
   if (h < 11) category = "breakfast";
@@ -269,16 +317,27 @@ function estimateWithBuiltinEngine(input) {
  * Main AI estimation dispatcher
  */
 async function estimateMeal(promptText, imageBase64 = null) {
+  // 1. Try Gemini if available
   try {
-    return await estimateWithGemini(promptText, imageBase64);
-  } catch (err) {
-    if (err.message === "NO_API_KEY" || err.message.includes("API key")) {
-      console.log("[AI] No Gemini API Key set or error. Using built-in local nutrition engine.");
-      return estimateWithBuiltinEngine(promptText || "Food item");
+    const key = await getApiKey();
+    if (key) {
+      return await estimateWithGemini(promptText, imageBase64);
     }
-    console.warn("[AI] Gemini API failed, falling back to local engine:", err.message);
-    return estimateWithBuiltinEngine(promptText || "Food item");
+  } catch (err) {
+    console.warn("[AI] Gemini attempt failed:", err.message);
   }
+
+  // 2. Try OpenRouter if available
+  if (process.env.OPENROUTER_API_KEY) {
+    try {
+      return await estimateWithOpenRouter(promptText, imageBase64);
+    } catch (err) {
+      console.warn("[AI] OpenRouter attempt failed:", err.message);
+    }
+  }
+
+  // 3. Fallback to built-in offline engine
+  return estimateWithBuiltinEngine(promptText || "Food item");
 }
 
 function capitalize(s) {
