@@ -8,7 +8,25 @@ const { estimateMeal, getApiKey } = require('./aiService');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+const allowedOrigins = [
+  'https://calorie-tracker.antideploy.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'capacitor://localhost',
+  'http://localhost'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, native webview)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || origin.endsWith('.antideploy.app')) {
+      return callback(null, true);
+    }
+    return callback(new Error('Blocked by CORS policy'));
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '15mb' })); // Support base64 food photo uploads
 app.use(express.static(path.join(__dirname, '..'))); // Serve frontend directly
 

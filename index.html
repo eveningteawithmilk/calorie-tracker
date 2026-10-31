@@ -63,8 +63,14 @@
           <i class="fa-solid fa-mobile-screen-button"></i>
           <span>Mobile</span>
         </button>
-        <button id="themeToggleBtn" class="icon-btn-minimal" title="Switch Theme">
-          <i class="fa-solid fa-circle-half-stroke"></i>
+        <button id="themeToggleBtn" class="dark-mode-toggle" title="Toggle Dark Mode (On / Off)" aria-label="Toggle Dark Mode" role="switch" aria-checked="false">
+          <span class="dark-mode-switch">
+            <span class="dark-mode-thumb">
+              <i class="fa-solid fa-sun sun-icon"></i>
+              <i class="fa-solid fa-moon moon-icon"></i>
+            </span>
+          </span>
+          <span id="darkModeStatusLabel" class="dark-mode-label">Dark Mode</span>
         </button>
 
         <div class="dropdown">
@@ -76,6 +82,16 @@
             <button onclick="openMobileInstallModal()" class="dropdown-item">
               <i class="fa-solid fa-mobile-screen-button"></i> 📱 Put on Mobile (QR)
             </button>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item dropdown-toggle-item" onclick="toggleDarkMode(event)" role="menuitem">
+              <div class="dropdown-toggle-left">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+                <span>Dark Mode</span>
+              </div>
+              <div class="mini-toggle" id="menuDarkToggle">
+                <div class="mini-toggle-thumb"></div>
+              </div>
+            </div>
             <div class="dropdown-divider"></div>
             <button onclick="setTheme('aesop')" class="dropdown-item">
               <i class="fa-solid fa-feather"></i> Aēsop Editorial Theme
@@ -744,6 +760,22 @@
         <div class="ai-key-status" id="apiKeyStatusBox">
           <i class="fa-solid fa-shield-halved text-accent"></i>
           <span id="apiKeyStatusText">Checking AI status...</span>
+        </div>
+
+        <div class="form-group appearance-group" style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+          <label class="form-label">Theme & Appearance</label>
+          <div class="appearance-card" onclick="toggleDarkMode()">
+            <div class="appearance-info">
+              <i class="fa-solid fa-circle-half-stroke text-accent" style="font-size: 18px;"></i>
+              <div>
+                <strong id="modalDarkModeLabel" style="font-size: 14px; display: block;">Dark Mode</strong>
+                <span class="subtext-xs" style="font-size: 12px; color: var(--text-muted);">Toggle between dark obsidian and editorial light theme</span>
+              </div>
+            </div>
+            <div class="mini-toggle" id="settingsModalDarkToggle">
+              <div class="mini-toggle-thumb"></div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-footer">

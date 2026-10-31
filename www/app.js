@@ -189,7 +189,14 @@ function loadFromLocalStorage() {
     console.error("Failed to load local storage state:", err);
   }
 
-  setTheme(appState.theme || "aesop");
+  const savedTheme = appState.theme || localStorage.getItem("caltrack_theme");
+  if (savedTheme) {
+    setTheme(savedTheme);
+  } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    setTheme("dark");
+  } else {
+    setTheme("aesop");
+  }
 }
 
 function saveLocalState() {
@@ -1196,36 +1203,82 @@ function showToast(message, type = "info") {
   }, 3000);
 }
 
-// --- Theme Management ---
+// --- Theme & Dark Mode Management ---
+function isDarkMode() {
+  return document.body.classList.contains("theme-dark");
+}
+
 function setTheme(themeName) {
   document.body.classList.remove("theme-aesop", "theme-dark", "theme-light");
   document.body.classList.add(`theme-${themeName}`);
   appState.theme = themeName;
+  localStorage.setItem("caltrack_theme", themeName);
   saveLocalState();
-  updateThemeIcon();
+  updateThemeUI();
   renderWeeklyChart();
 }
 
-function toggleTheme() {
-  if (document.body.classList.contains("theme-aesop")) {
-    setTheme("dark");
-  } else if (document.body.classList.contains("theme-dark")) {
-    setTheme("light");
+function toggleDarkMode(event) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
+  if (isDarkMode()) {
+    // Switch dark mode OFF -> return to light theme
+    const lightTheme = (appState.lastLightTheme && appState.lastLightTheme !== "dark") ? appState.lastLightTheme : "aesop";
+    setTheme(lightTheme);
   } else {
-    setTheme("aesop");
+    // Switch dark mode ON
+    if (appState.theme && appState.theme !== "dark") {
+      appState.lastLightTheme = appState.theme;
+    }
+    setTheme("dark");
+  }
+}
+
+// Keep toggleTheme as alias
+function toggleTheme(event) {
+  toggleDarkMode(event);
+}
+
+function updateThemeUI() {
+  const isDark = isDarkMode();
+
+  // 1. Header toggle button & label
+  const btn = document.getElementById("themeToggleBtn");
+  const label = document.getElementById("darkModeStatusLabel");
+  if (btn) {
+    btn.setAttribute("aria-checked", isDark ? "true" : "false");
+    btn.setAttribute("title", isDark ? "Dark Mode is ON. Click to switch to Light Mode." : "Dark Mode is OFF. Click to switch to Dark Mode.");
+  }
+  if (label) {
+    label.textContent = isDark ? "Dark" : "Light";
+  }
+
+  // 2. Dropdown menu mini toggle
+  const menuToggle = document.getElementById("menuDarkToggle");
+  if (menuToggle) {
+    menuToggle.classList.toggle("active", isDark);
+  }
+
+  // 3. Settings modal mini toggle
+  const modalToggle = document.getElementById("settingsModalDarkToggle");
+  const modalLabel = document.getElementById("modalDarkModeLabel");
+  if (modalToggle) {
+    modalToggle.classList.toggle("active", isDark);
+  }
+  if (modalLabel) {
+    modalLabel.textContent = isDark ? "Dark Mode (Enabled)" : "Dark Mode (Disabled)";
+  }
+
+  // 4. Update mobile/PWA meta theme-color
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+    metaThemeColor.setAttribute("content", isDark ? "#151413" : "#f4f0ea");
   }
 }
 
 function updateThemeIcon() {
-  const btn = document.getElementById("themeToggleBtn");
-  if (!btn) return;
-  if (document.body.classList.contains("theme-aesop")) {
-    btn.innerHTML = `<i class="fa-solid fa-feather"></i>`;
-  } else if (document.body.classList.contains("theme-dark")) {
-    btn.innerHTML = `<i class="fa-solid fa-moon"></i>`;
-  } else {
-    btn.innerHTML = `<i class="fa-solid fa-sun"></i>`;
-  }
+  updateThemeUI();
 }
 
 function focusInsights() {
@@ -1476,7 +1529,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Action buttons
-  document.getElementById("themeToggleBtn").addEventListener("click", toggleTheme);
+  document.getElementById("themeToggleBtn").addEventListener("click", toggleDarkMode);
   document.getElementById("calcModalBtn").addEventListener("click", openGoalsModal);
 
   // More menu dropdown
